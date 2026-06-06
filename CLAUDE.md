@@ -54,9 +54,9 @@ if they drift, and Renovate groups the three so they bump together.
   `graph/resolvers/*.go` are preserved across regeneration.
 - Operator-tunable values are env-driven with `.env.example` defaults: `PORT`
   (server), `GQL_HOST`/`GQL_PORT` (`make todo-*` curls), `DB_DSN` (SQLite path).
-- CI (`.github/workflows/ci.yml`) splits into `changes → static-check → build /
-  test / integration-test → e2e → ci-pass`; actions are SHA-pinned; jobs use
-  `jdx/mise-action`.
+- CI (`.github/workflows/ci.yml`): `changes → static-check → {build, test,
+  integration-test}`; `e2e` needs `build` + `test`; `ci-pass` aggregates all
+  six jobs. Actions are SHA-pinned; jobs use `jdx/mise-action`.
 
 ## Gotchas
 
@@ -65,3 +65,19 @@ if they drift, and Renovate groups the three so they bump together.
   `CGO_ENABLED=0` static `scratch` build.
 - In the container the database lives at `/data/dev.db` (writable, owned by the
   non-root user); mount a volume at `/data` to persist it.
+
+## Skills
+
+These portfolio skills maintain this project's infrastructure files:
+
+| Skill | Maintains |
+|-------|-----------|
+| `/makefile` | `Makefile`, `.mise.toml` |
+| `/ci-workflow` | `.github/workflows/*.yml` |
+| `/renovate` | `renovate.json` |
+| `/readme` | `README.md` |
+| `/project-review` | Runs all of the above in parallel |
+
+When spawning subagents to review or modify these files, always pass the
+relevant skill's full conventions into the agent prompt — agents cannot read
+skill files themselves.

@@ -43,7 +43,7 @@ jobs:
 
   static-check:
     needs: [changes]
-    if: needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !failure() && !cancelled() && (needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -59,7 +59,7 @@ jobs:
 
   build:
     needs: [changes, static-check]
-    if: needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !failure() && !cancelled() && (needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -75,7 +75,7 @@ jobs:
 
   test:
     needs: [changes, static-check]
-    if: needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !failure() && !cancelled() && (needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -91,7 +91,7 @@ jobs:
 
   integration-test:
     needs: [changes, static-check]
-    if: needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !failure() && !cancelled() && (needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -107,7 +107,7 @@ jobs:
 
   e2e:
     needs: [changes, build, test]
-    if: needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !failure() && !cancelled() && (needs.changes.outputs.code == 'true' || startsWith(github.ref, 'refs/tags/v')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

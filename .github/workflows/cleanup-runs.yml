@@ -5,14 +5,30 @@ on:
     - cron: '0 0 * * 0'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RETAIN_DAYS: '7'
     steps:
-      - name: Delete old workflow runs
-        uses: Mattraks/delete-workflow-runs@bd2822c9d98065c9766fb1f4bbc32325c47de4fb # v2
-        with:
-          token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          retain_days: 7
-          keep_minimum_runs: 5
+      - name: Delete workflow runs older than RETAIN_DAYS
+        run: |
+          cutoff=$(date -u -d "${RETAIN_DAYS} days ago" +%s)
+          deleted=0
+          gh api --paginate "repos/${GH_REPO}/actions/runs" \
+            --jq '.workflow_runs[] | "\(.id) \(.created_at)"' \
+          | while read -r id created; do
+              ts=$(date -u -d "$created" +%s)
+              if [ "$ts" -lt "$cutoff" ]; then
+                gh api -X DELETE "repos/${GH_REPO}/actions/runs/${id}" \
+                  && deleted=$((deleted + 1)) \
+                  && echo "deleted run ${id} (${created})"
+              fi
+            done
+          echo "cleanup complete"

@@ -111,3 +111,37 @@ func TestDeleteTodoNotFound(t *testing.T) {
 		t.Fatal("expected an error deleting a non-existent todo, got nil")
 	}
 }
+
+// getTodo on a missing id returns a zero-value Todo (id 0), not an error and
+// not null — GORM's Find leaves the result zeroed when no row matches. Lock
+// this (quirky) contract so a future switch to not-found errors is caught.
+func TestGetTodoNotFound(t *testing.T) {
+	c, _ := newTestClient(t)
+
+	var resp struct{ GetTodo todo }
+	c.MustPost(`{ getTodo(todoId: 999) { id text done } }`, &resp)
+	if resp.GetTodo.ID != 0 || resp.GetTodo.Text != "" || resp.GetTodo.Done {
+		t.Fatalf("getTodo(999) = %+v, want zero-value Todo {0 \"\" false}", resp.GetTodo)
+	}
+}
+
+// updateTodo uses GORM Save, which upserts — updating a non-existent id
+// silently creates the row. Lock that behavior so a future switch to
+// update-only semantics is caught.
+func TestUpdateTodoUpsertsNonExistent(t *testing.T) {
+	c, db := newTestClient(t)
+
+	var resp struct{ UpdateTodo todo }
+	c.MustPost(`mutation { updateTodo(input: {id: 999, text: "new", done: false}) { id text done } }`, &resp)
+	if resp.UpdateTodo.ID != 999 || resp.UpdateTodo.Text != "new" {
+		t.Fatalf("updateTodo upsert = %+v, want {999 new false}", resp.UpdateTodo)
+	}
+
+	var n int64
+	if err := db.Model(&customTypes.Todo{}).Where("id = ?", 999).Count(&n).Error; err != nil {
+		t.Fatalf("count: %v", err)
+	}
+	if n != 1 {
+		t.Fatalf("row count for id 999 = %d, want 1 (Save upserts)", n)
+	}
+}

@@ -46,31 +46,31 @@ check-go-alignment: ## Verify the Go version agrees across go.mod, .mise.toml an
 	fi; \
 	echo "Go version aligned: $$gomod"
 
-generate: ## Regenerate gqlgen code from the schema
+generate: deps ## Regenerate gqlgen code from the schema
 	@rm -rf graph/customTypes graph/generated
 	@$(GQLGEN) generate
 
-format: ## Auto-format Go code
+format: deps ## Auto-format Go code
 	@golangci-lint fmt ./...
 
-vet: ## Run go vet
+vet: deps ## Run go vet
 	@go vet ./...
 
-lint: ## Run golangci-lint
+lint: deps ## Run golangci-lint
 	@golangci-lint run ./...
 	@go mod tidy
 	@git diff --exit-code go.mod go.sum
 
-vulncheck: ## Scan for known Go vulnerabilities
+vulncheck: deps ## Scan for known Go vulnerabilities
 	@govulncheck ./...
 
-trivy-fs: ## Trivy filesystem scan (vuln, secret, misconfig)
+trivy-fs: deps ## Trivy filesystem scan (vuln, secret, misconfig)
 	@trivy fs --scanners vuln,secret,misconfig --exit-code 1 --no-progress .
 
-secrets: ## Scan the repo for committed secrets
+secrets: deps ## Scan the repo for committed secrets
 	@gitleaks dir --no-banner --redact .
 
-hadolint: ## Lint the Dockerfile
+hadolint: deps ## Lint the Dockerfile
 	@hadolint Dockerfile
 
 static-check: check-go-alignment generate vet lint vulncheck trivy-fs secrets hadolint ## Run all static-analysis gates

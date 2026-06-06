@@ -33,6 +33,9 @@ func newServer(t *testing.T) *httptest.Server {
 		generated.NewExecutableSchema(generated.Config{Resolvers: &resolvers.Resolver{}}),
 	)
 	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	mux.Handle("/query", common.CreateContext(&common.CustomContext{Database: db}, srv))
 
@@ -84,6 +87,19 @@ func TestPlaygroundServed(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("playground status = %d, want 200", resp.StatusCode)
+	}
+}
+
+func TestHealthzOK(t *testing.T) {
+	ts := newServer(t)
+
+	resp, err := http.Get(ts.URL + "/healthz") //nolint:noctx // test client
+	if err != nil {
+		t.Fatalf("get healthz: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("healthz status = %d, want 200", resp.StatusCode)
 	}
 }
 

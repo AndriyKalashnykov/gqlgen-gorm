@@ -11,6 +11,6 @@ act           = "0.2.89"
 
 [env]
 # Use the mise-provisioned Go toolchain instead of downloading the one
-# named in go.mod's `toolchain` directive (1.23.x already satisfies it).
+# named in go.mod's `toolchain` directive (the 1.26 line already satisfies it).
 GOTOOLCHAIN = "local"
 GOFLAGS     = "-mod=mod"

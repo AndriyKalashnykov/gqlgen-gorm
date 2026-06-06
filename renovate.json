@@ -7,6 +7,7 @@
     "helpers:pinGitHubActionDigests"
   ],
   "labels": ["dependencies"],
+  "postUpdateOptions": ["gomodTidy"],
   "packageRules": [
     {
       "description": "Group Go module updates",
