@@ -131,3 +131,6 @@ graph/customTypes/
 dev.db
 
 # End of https://www.toptal.com/developers/gitignore/api/go,visualstudiocode,macos,windows,linux
+
+# Claude Code local artifacts
+.claude/

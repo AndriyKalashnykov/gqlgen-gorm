@@ -1,0 +1,16 @@
+# mise — single source of truth for this project's toolchain.
+# `mise install` (run by `make deps`) provisions every tool below.
+[tools]
+go            = "1.26"
+golangci-lint = "2.12.2"
+trivy         = "0.71.0"
+gitleaks      = "8.30.1"
+hadolint      = "2.14.0"
+act           = "0.2.89"
+"go:golang.org/x/vuln/cmd/govulncheck" = "1.1.4"
+
+[env]
+# Use the mise-provisioned Go toolchain instead of downloading the one
+# named in go.mod's `toolchain` directive (1.23.x already satisfies it).
+GOTOOLCHAIN = "local"
+GOFLAGS     = "-mod=mod"

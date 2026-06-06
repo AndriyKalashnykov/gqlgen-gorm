@@ -1,0 +1,12 @@
+.git
+.github
+.bin
+dev.db
+*.db
+graph/generated
+graph/customTypes
+README.md
+CLAUDE.md
+LICENSE
+.env
+.env.example
