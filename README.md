@@ -1,5 +1,7 @@
 [![CI](https://github.com/AndriyKalashnykov/gqlgen-gorm/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AndriyKalashnykov/gqlgen-gorm/actions/workflows/ci.yml)
+[![Hits](https://hits.sh/github.com/AndriyKalashnykov/gqlgen-gorm.svg?view=today-total&style=plastic)](https://hits.sh/github.com/AndriyKalashnykov/gqlgen-gorm/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://app.renovatebot.com/dashboard#github/AndriyKalashnykov/gqlgen-gorm)
 
 # Golang + GraphQL + GORM (schema-first)
 
@@ -13,8 +15,8 @@ tiny (~22 MB) non-root `scratch` container image.
 ## Table of Contents
 
 - [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
+- [Prerequisites](#prerequisites)
 - [API](#api)
   - [createTodo](#createtodo)
   - [getTodo](#gettodo)
@@ -23,6 +25,7 @@ tiny (~22 MB) non-root `scratch` container image.
   - [deleteTodo](#deletetodo)
 - [Docker](#docker)
 - [Make Targets](#make-targets)
+- [CI/CD](#cicd)
 - [License](#license)
 
 ## Tech Stack
@@ -37,19 +40,6 @@ tiny (~22 MB) non-root `scratch` container image.
 | Container   | Multi-stage Docker → `scratch` (non-root, HEALTHCHECK)                   |
 | Toolchain   | [mise](https://mise.jdx.dev/)                                            |
 | Build       | GNU Make                                                                 |
-
-## Prerequisites
-
-| Tool   | Version | Purpose                                                  |
-|--------|---------|----------------------------------------------------------|
-| [mise](https://mise.jdx.dev/) | latest  | Provisions Go and the dev tools (`make deps`) |
-| Go     | 1.26    | Build/run the server (installed by mise)                 |
-| GNU Make | any   | Task runner                                              |
-| `jq`   | any     | Pretty-prints the `make todo-*` curl responses           |
-| Docker | any     | Build/run the container image (optional)                 |
-
-All tool versions are pinned in [`.mise.toml`](.mise.toml); `make deps`
-installs them.
 
 ## Quick Start
 
@@ -66,6 +56,19 @@ xdg-open http://localhost:4000/
 
 The bind port is configurable via `PORT` (or `GQL_PORT` for the `make` targets);
 the SQLite path via `DB_DSN`. Defaults live in [`.env.example`](.env.example).
+
+## Prerequisites
+
+| Tool   | Version | Purpose                                                  |
+|--------|---------|----------------------------------------------------------|
+| [mise](https://mise.jdx.dev/) | latest  | Provisions Go and the dev tools (`make deps`) |
+| Go     | 1.26    | Build/run the server (installed by mise)                 |
+| GNU Make | any   | Task runner                                              |
+| `jq`   | any     | Pretty-prints the `make todo-*` curl responses           |
+| Docker | any     | Build/run the container image (optional)                 |
+
+All tool versions are pinned in [`.mise.toml`](.mise.toml); `make deps`
+installs them.
 
 ## API
 
@@ -199,6 +202,30 @@ Run `make help` for the full list. Common targets:
 | `e2e`              | End-to-end tests (real HTTP server, ephemeral port)    |
 | `static-check`     | Alignment + lint + `go vet` + govulncheck + Trivy + gitleaks + hadolint |
 | `ci`               | Full local pipeline                                    |
+
+## CI/CD
+
+GitHub Actions runs on every push to `main`, tags `v*`, and pull requests
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). A `changes` detector
+gates the heavy jobs on code changes; `ci-pass` aggregates them into one
+required status. Tool versions come from `.mise.toml` via `jdx/mise-action`;
+all actions are SHA-pinned.
+
+| Job | Needs | Runs |
+|-----|-------|------|
+| `changes` | — | `dorny/paths-filter` — sets `code` output |
+| `static-check` | `changes` | `make static-check` (alignment, `go vet`, golangci-lint, govulncheck, Trivy, gitleaks, hadolint) |
+| `build` | `static-check` | `make build` |
+| `test` | `static-check` | `make test` (unit, `-race`) |
+| `integration-test` | `static-check` | `make integration-test` (in-process gqlgen client + SQLite) |
+| `e2e` | `build`, `test` | `make e2e` (real HTTP server, ephemeral port) |
+| `ci-pass` | all of the above | Aggregator — the single required check |
+
+No repository secrets are required (the workflow uses the built-in
+`GITHUB_TOKEN` only). [Renovate](https://docs.renovatebot.com/) keeps
+dependencies current, with the Go version grouped across `go.mod`,
+`.mise.toml`, and the Dockerfile so it bumps in lockstep. A weekly
+[`cleanup-runs.yml`](.github/workflows/cleanup-runs.yml) prunes old workflow runs.
 
 ## License
 
