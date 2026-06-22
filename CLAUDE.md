@@ -55,8 +55,10 @@ if they drift, and Renovate groups the three so they bump together.
 - Operator-tunable values are env-driven with `.env.example` defaults: `PORT`
   (server), `GQL_HOST`/`GQL_PORT` (`make todo-*` curls), `DB_DSN` (SQLite path).
 - CI (`.github/workflows/ci.yml`): `changes → static-check → {build, test,
-  integration-test}`; `e2e` needs `build` + `test`; `ci-pass` aggregates all
-  six jobs. Actions are SHA-pinned; jobs use `jdx/mise-action`.
+  integration-test, image-build}`; `e2e` needs `build` + `test`; `ci-pass`
+  aggregates all seven jobs. `image-build` is build-only (validates the
+  `scratch` image; no push). Actions are SHA-pinned; jobs use `jdx/mise-action`.
+  `make ci` mirrors the CI job set (includes `image-build`).
 
 ## Gotchas
 

@@ -87,7 +87,7 @@ integration-test: generate ## Run integration tests (in-process gqlgen client + 
 e2e: generate ## Run end-to-end tests (real HTTP server over an ephemeral port)
 	@go test -race -count=1 -tags=e2e ./e2e/...
 
-ci: deps static-check test integration-test e2e build ## Run the full local CI pipeline
+ci: deps static-check test integration-test e2e build image-build ## Run the full local CI pipeline
 
 ci-run: ## Run the GitHub Actions workflow locally via act
 	@act push

@@ -1,13 +1,24 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    ":dependencyDashboard",
-    ":semanticCommits",
-    "helpers:pinGitHubActionDigests"
+    "config:best-practices",
+    ":semanticCommitType(chore)"
   ],
   "labels": ["dependencies"],
+  "commitMessagePrefix": "chore(all): ",
   "postUpdateOptions": ["gomodTidy"],
+  "enabledManagers": ["gomod", "github-actions", "dockerfile", "mise"],
+  "automerge": true,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "platformAutomerge": false,
+  "prConcurrentLimit": 50,
+  "prHourlyLimit": 0,
+  "ignoreTests": false,
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "minimumReleaseAge": "0 days"
+  },
   "packageRules": [
     {
       "description": "Group Go module updates",
@@ -24,6 +35,11 @@
       "matchManagers": ["gomod", "mise", "dockerfile"],
       "matchDepNames": ["go", "golang"],
       "groupName": "go version"
+    },
+    {
+      "description": "Let major updates soak before automerge",
+      "matchUpdateTypes": ["major"],
+      "minimumReleaseAge": "3 days"
     }
   ]
 }
