@@ -3,11 +3,11 @@
 [tools]
 go            = "1.26"
 golangci-lint = "2.12.2"
-trivy         = "0.71.0"
+trivy         = "0.71.2"
 gitleaks      = "8.30.1"
 hadolint      = "2.14.0"
 act           = "0.2.89"
-"go:golang.org/x/vuln/cmd/govulncheck" = "1.1.4"
+"go:golang.org/x/vuln/cmd/govulncheck" = "1.4.0"
 
 [env]
 # Use the mise-provisioned Go toolchain instead of downloading the one

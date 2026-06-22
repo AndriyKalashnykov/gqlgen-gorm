@@ -3,14 +3,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://app.renovatebot.com/dashboard#github/AndriyKalashnykov/gqlgen-gorm)
 
-# Golang + GraphQL + GORM (schema-first)
+# Golang + GraphQL + GORM — Schema-First Todo API
 
-A schema-first GraphQL **Todo** API written in Go. GraphQL types and
-operations are defined in [`graph/typeDefs/todo.gql`](graph/typeDefs/todo.gql);
-[gqlgen](https://gqlgen.com/) generates the type-safe server code, and
-[GORM](https://gorm.io/) persists data to SQLite. The binary serves an
-interactive GraphQL Playground and a single `/query` endpoint, and ships as a
-tiny (~22 MB) non-root `scratch` container image.
+A schema-first GraphQL **Todo** API written in Go. The **runtime surface** is a
+[gqlgen](https://gqlgen.com/)-generated server — an interactive GraphQL
+Playground, a single `POST /query` endpoint, and a `/healthz` probe — with
+[GORM](https://gorm.io/) persisting to SQLite over the pure-Go
+[glebarez/sqlite](https://github.com/glebarez/sqlite) driver (no CGO). The
+**delivery surface** is a tiny (~22 MB) non-root `scratch` image with a
+HEALTHCHECK, a [mise](https://mise.jdx.dev/)-pinned toolchain, a three-layer
+test pyramid (unit / integration / e2e), and a CVE-gated GitHub Actions pipeline
+(govulncheck, Trivy, gitleaks, hadolint). The schema lives in
+[`graph/typeDefs/todo.gql`](graph/typeDefs/todo.gql).
 
 ## Table of Contents
 
@@ -219,13 +223,15 @@ all actions are SHA-pinned.
 | `test` | `static-check` | `make test` (unit, `-race`) |
 | `integration-test` | `static-check` | `make integration-test` (in-process gqlgen client + SQLite) |
 | `e2e` | `build`, `test` | `make e2e` (real HTTP server, ephemeral port) |
+| `image-build` | `static-check` | `make image-build` (build-only validation of the `scratch` image) |
 | `ci-pass` | all of the above | Aggregator — the single required check |
 
 No repository secrets are required (the workflow uses the built-in
 `GITHUB_TOKEN` only). [Renovate](https://docs.renovatebot.com/) keeps
 dependencies current, with the Go version grouped across `go.mod`,
 `.mise.toml`, and the Dockerfile so it bumps in lockstep. A weekly
-[`cleanup-runs.yml`](.github/workflows/cleanup-runs.yml) prunes old workflow runs.
+[`cleanup-runs.yml`](.github/workflows/cleanup-runs.yml) prunes old workflow runs
+(per-workflow retention) and stale branch caches.
 
 ## License
 
