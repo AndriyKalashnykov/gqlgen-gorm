@@ -54,6 +54,11 @@
       "description": "Let major updates soak before automerge",
       "matchUpdateTypes": ["major"],
       "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Don't digest-pin the Dockerfile's floating tags. `golang` is tracked at minor granularity via ARG GO_VERSION (the cross-manager 'go version' group + check-go-alignment); pinning a digest onto that ARG line collides with the version bump (one silently dropped) and risks renovate#18022 ARG-folding. `docker/dockerfile:1` is the recommended floating BuildKit frontend. The builder is a throwaway stage (final image is scratch), so a digest pin adds no runtime-security value.",
+      "matchManagers": ["dockerfile"],
+      "pinDigests": false
     }
   ]
 }
