@@ -68,6 +68,20 @@ if they drift, and Renovate groups the three so they bump together.
 - In the container the database lives at `/data/dev.db` (writable, owned by the
   non-root user); mount a volume at `/data` to persist it.
 
+## Upgrade Backlog
+
+Deferred items from `/upgrade-analysis` (2026-06-25). The repo is otherwise
+fully current (Go 1.26.4, all direct deps + mise tools + Actions at latest,
+`govulncheck` clean).
+
+- [ ] **Verify Renovate is actually running.** `app/renovate` has opened zero
+  PRs and there are no `renovate/*` branches; repo **Issues are disabled**, so
+  the Dependency Dashboard (and the README Renovate badge target) cannot exist.
+  `renovate.json` is valid but **inert** until the Mend app is installed/active.
+  Fix is external: confirm the app at <https://github.com/apps/renovate> and
+  enable repo Issues. Until then, dependency bumps (e.g. `gorm 1.31.1→1.31.2`)
+  are manual.
+
 ## Skills
 
 Use the following skills when working on the related infrastructure files:
