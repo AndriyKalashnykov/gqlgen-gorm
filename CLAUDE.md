@@ -41,7 +41,7 @@ if they drift, and Renovate groups the three so they bump together.
 | `make test` | Unit tests (`-race`) |
 | `make integration-test` | Integration tests (in-process gqlgen client + SQLite) |
 | `make e2e` | E2E tests (real HTTP server, ephemeral port) |
-| `make static-check` | Alignment + `go vet` + lint + govulncheck + Trivy + gitleaks + hadolint |
+| `make static-check` | Alignment + generate + `go vet` + lint + govulncheck + Trivy + gitleaks + hadolint |
 | `make ci` | Full local pipeline |
 | `make image-build` / `image-run` | Build / run the container |
 
@@ -68,17 +68,32 @@ if they drift, and Renovate groups the three so they bump together.
 - In the container the database lives at `/data/dev.db` (writable, owned by the
   non-root user); mount a volume at `/data` to persist it.
 
+## Upgrade Backlog
+
+Deferred items from `/upgrade-analysis` (2026-06-25). The repo is otherwise
+fully current (Go 1.26.4, all direct deps + mise tools + Actions at latest,
+`govulncheck` clean).
+
+- [ ] **Verify Renovate is actually running.** `app/renovate` has opened zero
+  PRs and there are no `renovate/*` branches; repo **Issues are disabled**, so
+  the Dependency Dashboard (and the README Renovate badge target) cannot exist.
+  `renovate.json` is valid but **inert** until the Mend app is installed/active.
+  Fix is external: confirm the app at <https://github.com/apps/renovate> and
+  enable repo Issues. Until then, dependency bumps (e.g. `gorm 1.31.1→1.31.2`)
+  are manual.
+
 ## Skills
 
-These portfolio skills maintain this project's infrastructure files:
+Use the following skills when working on the related infrastructure files:
 
-| Skill | Maintains |
-|-------|-----------|
-| `/makefile` | `Makefile`, `.mise.toml` |
-| `/ci-workflow` | `.github/workflows/*.yml` |
-| `/renovate` | `renovate.json` |
-| `/readme` | `README.md` |
-| `/project-review` | Runs all of the above in parallel |
+| File(s) | Skill |
+|---------|-------|
+| `Makefile`, `.mise.toml` | `/makefile` |
+| `.github/workflows/*.{yml,yaml}` | `/ci-workflow` |
+| `renovate.json` | `/renovate` |
+| `README.md` | `/readme` |
+
+`/project-review` runs all of the above in parallel.
 
 When spawning subagents to review or modify these files, always pass the
 relevant skill's full conventions into the agent prompt — agents cannot read

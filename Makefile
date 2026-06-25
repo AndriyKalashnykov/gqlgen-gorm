@@ -20,8 +20,8 @@ DOCKER_TAG   ?= latest
 # pinned version and its codegen deps are recorded in go.sum.
 GQLGEN := go tool github.com/99designs/gqlgen
 
-.PHONY: help deps check-go-alignment generate format vet lint vulncheck trivy-fs \
-        secrets hadolint static-check build test integration-test e2e ci ci-run \
+.PHONY: help deps deps-docker check-go-alignment generate format vet lint vulncheck \
+        trivy-fs secrets hadolint static-check build test integration-test e2e ci ci-run \
         clean run image-build image-run image-stop image-push renovate-validate \
         todo-create todo-update todo-get todo-get-all todo-delete
 
@@ -30,9 +30,12 @@ help: ## Show this help
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 deps: ## Install the pinned toolchain via mise
-	@command -v mise >/dev/null 2>&1 || { echo "mise not found — install from https://mise.run"; exit 1; }
+	@command -v mise >/dev/null 2>&1 || { echo "mise not found — installing from https://mise.run"; curl -fsSL https://mise.run | sh; }
 	@mise install --yes
 	@mise reshim
+
+deps-docker: ## Verify Docker is available (system prerequisite, not mise-managed)
+	@command -v docker >/dev/null 2>&1 || { echo "docker not found — install Docker"; exit 1; }
 
 check-go-alignment: ## Verify the Go version agrees across go.mod, .mise.toml and the Dockerfile
 	@set -e; \
@@ -89,7 +92,7 @@ e2e: generate ## Run end-to-end tests (real HTTP server over an ephemeral port)
 
 ci: deps static-check test integration-test e2e build image-build ## Run the full local CI pipeline
 
-ci-run: ## Run the GitHub Actions workflow locally via act
+ci-run: deps ## Run the GitHub Actions workflow locally via act
 	@act push
 
 run: generate ## Run the server locally
@@ -98,17 +101,16 @@ run: generate ## Run the server locally
 clean: ## Remove build artifacts and the dev database
 	@rm -rf ./.bin/ graph/customTypes graph/generated dev.db
 
-image-build: generate ## Build the Docker image
-	@command -v docker >/dev/null 2>&1 || { echo "docker not found"; exit 1; }
+image-build: deps-docker generate ## Build the Docker image
 	@docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
 
-image-run: ## Run the Docker image
+image-run: deps-docker ## Run the Docker image
 	@docker run --rm -p $(GQL_PORT):$(GQL_PORT) -e PORT=$(GQL_PORT) $(DOCKER_IMAGE):$(DOCKER_TAG)
 
-image-stop: ## Stop the running container
+image-stop: deps-docker ## Stop the running container
 	@docker ps -q --filter ancestor=$(DOCKER_IMAGE):$(DOCKER_TAG) | xargs -r docker stop
 
-image-push: ## Push the Docker image
+image-push: deps-docker ## Push the Docker image
 	@docker push $(DOCKER_IMAGE):$(DOCKER_TAG)
 
 renovate-validate: ## Validate renovate.json

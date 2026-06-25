@@ -8,7 +8,7 @@ require (
 	github.com/99designs/gqlgen v0.17.92
 	github.com/glebarez/sqlite v1.11.0
 	github.com/vektah/gqlparser/v2 v2.5.35
-	gorm.io/gorm v1.31.1
+	gorm.io/gorm v1.31.2
 )
 
 require (
