@@ -13,12 +13,13 @@ Playground, a single `POST /query` endpoint, and a `/healthz` probe — with
 **delivery surface** is a tiny (~22 MB) non-root `scratch` image with a
 HEALTHCHECK, a [mise](https://mise.jdx.dev/)-pinned toolchain, a three-layer
 test pyramid (unit / integration / e2e), and a CVE-gated GitHub Actions pipeline
-(govulncheck, Trivy, gitleaks, hadolint). The schema lives in
+(golangci-lint, govulncheck, Trivy, gitleaks, hadolint). The schema lives in
 [`graph/typeDefs/todo.gql`](graph/typeDefs/todo.gql).
 
 ## Table of Contents
 
 - [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
 - [Quick Start](#quick-start)
 - [Prerequisites](#prerequisites)
 - [API](#api)
@@ -45,6 +46,22 @@ test pyramid (unit / integration / e2e), and a CVE-gated GitHub Actions pipeline
 | Toolchain   | [mise](https://mise.jdx.dev/)                                            |
 | Build       | GNU Make                                                                 |
 
+## Architecture
+
+```text
+server.go                  # entry point: handler, /healthz, -healthcheck probe, PORT parsing
+graph/
+  typeDefs/todo.gql        # GraphQL schema (source of truth)
+  resolvers/               # hand-written resolvers (preserved across regeneration)
+  generated/, customTypes/ # gqlgen output (generated, gitignored)
+internal/common/           # DB init + request-context plumbing
+e2e/                       # end-to-end tests (build tag: e2e)
+```
+
+Requests hit `POST /query`; resolvers use GORM to read/write the SQLite database
+(`DB_DSN`, default `dev.db`). `make generate` regenerates the gqlgen layer from
+the schema before every build, test, and container image.
+
 ## Quick Start
 
 ```bash
@@ -67,6 +84,7 @@ the SQLite path via `DB_DSN`. Defaults live in [`.env.example`](.env.example).
 |--------|---------|----------------------------------------------------------|
 | [mise](https://mise.jdx.dev/) | latest  | Provisions Go and the dev tools (`make deps`) |
 | Go     | 1.26    | Build/run the server (installed by mise)                 |
+| [Git](https://git-scm.com/) | any | Clone the repository                        |
 | GNU Make | any   | Task runner                                              |
 | `jq`   | any     | Pretty-prints the `make todo-*` curl responses           |
 | Docker | any     | Build/run the container image (optional)                 |
@@ -193,19 +211,64 @@ The image runs as a non-root user and stores the SQLite database under
 
 ## Make Targets
 
-Run `make help` for the full list. Common targets:
+Run `make help` for the full list.
 
-| Target             | Description                                            |
-|--------------------|--------------------------------------------------------|
-| `deps`             | Install the pinned toolchain via mise                  |
-| `generate`         | Regenerate gqlgen code from the schema                 |
-| `run`              | Run the server locally                                 |
-| `build`            | Build the server binary                                |
-| `test`             | Unit tests (`-race`)                                   |
-| `integration-test` | Integration tests (in-process gqlgen client + SQLite)  |
-| `e2e`              | End-to-end tests (real HTTP server, ephemeral port)    |
-| `static-check`     | Alignment + lint + `go vet` + govulncheck + Trivy + gitleaks + hadolint |
-| `ci`               | Full local pipeline                                    |
+**Build & Run**
+
+| Target | Description |
+|--------|-------------|
+| `deps` | Install the pinned toolchain via mise |
+| `deps-docker` | Verify Docker is available (system prerequisite) |
+| `generate` | Regenerate gqlgen code from the schema |
+| `run` | Run the server locally |
+| `build` | Build the server binary |
+| `clean` | Remove build artifacts and the dev database |
+
+**Test**
+
+| Target | Description |
+|--------|-------------|
+| `test` | Unit tests (`-race`) |
+| `integration-test` | Integration tests (in-process gqlgen client + SQLite) |
+| `e2e` | End-to-end tests (real HTTP server, ephemeral port) |
+
+**Code Quality**
+
+| Target | Description |
+|--------|-------------|
+| `static-check` | Runs every gate below, in order |
+| `check-go-alignment` | Verify the Go version agrees across `go.mod`, `.mise.toml`, Dockerfile |
+| `format` | Auto-format Go code |
+| `vet` | `go vet` |
+| `lint` | golangci-lint + `go mod tidy` drift check |
+| `vulncheck` | govulncheck |
+| `trivy-fs` | Trivy filesystem scan (vuln, secret, misconfig) |
+| `secrets` | gitleaks secret scan |
+| `hadolint` | Lint the Dockerfile |
+
+**Docker**
+
+| Target | Description |
+|--------|-------------|
+| `image-build` | Build the `scratch` image |
+| `image-run` | Run the image on `:4000` (HEALTHCHECK probes `/healthz`) |
+| `image-stop` | Stop the running container |
+| `image-push` | Push the image |
+
+**CI & Utilities**
+
+| Target | Description |
+|--------|-------------|
+| `ci` | Full local pipeline (mirrors CI) |
+| `ci-run` | Run the GitHub Actions workflow locally via act |
+| `renovate-validate` | Validate `renovate.json` |
+
+**API helpers** (require a running server + `jq`)
+
+| Target | Description |
+|--------|-------------|
+| `todo-create` / `todo-update` / `todo-delete` | Create / update / delete a todo |
+| `todo-get` / `todo-get-all` | Fetch one / list all todos |
 
 ## CI/CD
 
@@ -219,11 +282,11 @@ all actions are SHA-pinned.
 |-----|-------|------|
 | `changes` | — | `dorny/paths-filter` — sets `code` output |
 | `static-check` | `changes` | `make static-check` (alignment, `go vet`, golangci-lint, govulncheck, Trivy, gitleaks, hadolint) |
-| `build` | `static-check` | `make build` |
-| `test` | `static-check` | `make test` (unit, `-race`) |
-| `integration-test` | `static-check` | `make integration-test` (in-process gqlgen client + SQLite) |
-| `e2e` | `build`, `test` | `make e2e` (real HTTP server, ephemeral port) |
-| `image-build` | `static-check` | `make image-build` (build-only validation of the `scratch` image) |
+| `build` | `changes`, `static-check` | `make build` |
+| `test` | `changes`, `static-check` | `make test` (unit, `-race`) |
+| `integration-test` | `changes`, `static-check` | `make integration-test` (in-process gqlgen client + SQLite) |
+| `e2e` | `changes`, `build`, `test` | `make e2e` (real HTTP server, ephemeral port) |
+| `image-build` | `changes`, `static-check` | `make image-build` (build-only validation of the `scratch` image) |
 | `ci-pass` | all of the above | Aggregator — the single required check |
 
 No repository secrets are required (the workflow uses the built-in

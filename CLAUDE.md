@@ -41,7 +41,7 @@ if they drift, and Renovate groups the three so they bump together.
 | `make test` | Unit tests (`-race`) |
 | `make integration-test` | Integration tests (in-process gqlgen client + SQLite) |
 | `make e2e` | E2E tests (real HTTP server, ephemeral port) |
-| `make static-check` | Alignment + `go vet` + lint + govulncheck + Trivy + gitleaks + hadolint |
+| `make static-check` | Alignment + generate + `go vet` + lint + govulncheck + Trivy + gitleaks + hadolint |
 | `make ci` | Full local pipeline |
 | `make image-build` / `image-run` | Build / run the container |
 
@@ -70,15 +70,16 @@ if they drift, and Renovate groups the three so they bump together.
 
 ## Skills
 
-These portfolio skills maintain this project's infrastructure files:
+Use the following skills when working on the related infrastructure files:
 
-| Skill | Maintains |
-|-------|-----------|
-| `/makefile` | `Makefile`, `.mise.toml` |
-| `/ci-workflow` | `.github/workflows/*.yml` |
-| `/renovate` | `renovate.json` |
-| `/readme` | `README.md` |
-| `/project-review` | Runs all of the above in parallel |
+| File(s) | Skill |
+|---------|-------|
+| `Makefile`, `.mise.toml` | `/makefile` |
+| `.github/workflows/*.{yml,yaml}` | `/ci-workflow` |
+| `renovate.json` | `/renovate` |
+| `README.md` | `/readme` |
+
+`/project-review` runs all of the above in parallel.
 
 When spawning subagents to review or modify these files, always pass the
 relevant skill's full conventions into the agent prompt — agents cannot read

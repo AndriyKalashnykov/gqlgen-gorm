@@ -17,7 +17,8 @@
   "ignoreTests": false,
   "vulnerabilityAlerts": {
     "labels": ["security"],
-    "minimumReleaseAge": "0 days"
+    "minimumReleaseAge": "0 days",
+    "automerge": true
   },
   "packageRules": [
     {
@@ -29,6 +30,19 @@
       "description": "Group GitHub Actions updates",
       "matchManagers": ["github-actions"],
       "groupName": "github actions"
+    },
+    {
+      "description": "Bump the go.mod go directive to the latest patch",
+      "matchManagers": ["gomod"],
+      "matchDepNames": ["go"],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Soak mise tool bumps to dodge the tag-before-release 404 race (excludes go, regrouped below)",
+      "matchManagers": ["mise"],
+      "excludeDepNames": ["go", "golang"],
+      "groupName": "mise tools",
+      "minimumReleaseAge": "3 days"
     },
     {
       "description": "Bump the Go version together across go.mod, .mise.toml and the Dockerfile",
